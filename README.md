@@ -7,12 +7,16 @@
 A complete 2D canvas arcade game for [make.fun's best-game-01](https://make.fun/bounty/best-game-01). You are a
 lantern moth in a deep-indigo night garden: gather glowing light motes
 to fill your lantern, chain combos, dodge shadow wisps, and dash through
-the Eclipse Moth — the boss that arrives every fifth wave.
+the Eclipse Moth — boss of waves 5 and 10. Survive all 10 waves and
+the dawn breaks.
 
 ## How it plays
 
-- **Goal:** gather each wave's mote quota to clear it; survive, beat the
-  boss waves, and chase the best score (kept in localStorage).
+- **Goal:** survive 10 waves until dawn. Gather each wave's mote
+  quota to clear it, beat the Eclipse Moth on waves 5 and 10, and
+  watch the dawn break — the gold bar at the top of the screen tracks
+  your progress. Win: clear wave 10. The victory screen shows the
+  full run table (time, waves, motes, wisps banished, bosses, score).
 - **Move:** mouse or WASD / arrow keys. **Dash:** Space or click — a
   burst of speed with brief invulnerability. Dashing through a wisp
   banishes it; dashing through the boss is how the boss is hurt.
@@ -37,8 +41,9 @@ WebAudio synth for sound, seeded RNG (`?seed=`).
 ## Screenshots
 
 The four shots in `shots.json` are staged deterministically with
-`?shot=<name>&seed=1` — title over a live garden, the wave 5 boss
-fight, the blessing choice, and the game-over screen. Each scene freezes
+`?shot=<name>&seed=1` — the wave 10 final boss fight (the cover),
+the title over a live garden, the blessing choice, and the victory
+screen with its full stats table. Each scene freezes
 after staging and sets `window.__shotReady` for capture.
 
 ## Files

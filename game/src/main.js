@@ -1,5 +1,5 @@
 // Mothlight — the entry point: canvas setup, the game loop, and the
-// state machine (title / playing / blessing / paused / gameover).
+// state machine (title / playing / blessing / paused / victory / gameover).
 // Shot mode (?shot=<name>&seed=<n>) stages one frozen scene and never
 // advances the simulation, so a screenshot is exactly the staged frame.
 
@@ -37,7 +37,7 @@ const input = createInput(canvas);
 
 function pressStart() {
   audio.unlock();
-  if (world.status === 'title' || world.status === 'gameover') {
+  if (world.status === 'title' || world.status === 'gameover' || world.status === 'victory') {
     startRun(world);
   }
 }
@@ -71,7 +71,7 @@ function blessingAt(point) {
 
 canvas.addEventListener('click', (event) => {
   audio.unlock();
-  if (world.status === 'title' || world.status === 'gameover') {
+  if (world.status === 'title' || world.status === 'gameover' || world.status === 'victory') {
     pressStart();
     return;
   }
@@ -86,7 +86,7 @@ canvas.addEventListener('click', (event) => {
 
 function handleKeys(pressed) {
   if (pressed.has('Enter')) {
-    if (world.status === 'title' || world.status === 'gameover') pressStart();
+    if (world.status === 'title' || world.status === 'gameover' || world.status === 'victory') pressStart();
   }
   if (pressed.has('KeyR')) {
     if (world.status !== 'title') startRun(world);

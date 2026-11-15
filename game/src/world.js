@@ -11,6 +11,7 @@ import {
   COMBO,
   HEARTS_START,
   HEARTS_MAX,
+  TOTAL_WAVES,
   BLESSINGS,
   waveQuota,
   wispInterval,
@@ -104,7 +105,7 @@ export function createWorld(seed) {
     flash: 0,
     banner: '',
     bannerTimer: 0,
-    stats: { collected: 0, dashed: 0, hits: 0, bosses: 0 },
+    stats: { collected: 0, dashed: 0, hits: 0, bosses: 0, banished: 0 },
     over: null,
     newBest: false,
     moth: {
@@ -325,9 +326,36 @@ function endRun(world, audio) {
     best: world.best,
     collected: world.stats.collected,
     bosses: world.stats.bosses,
+    banished: world.stats.banished,
+    time: world.time,
   };
   burst(world, world.moth.x, world.moth.y, 40, '#FFB347');
   if (audio) audio.gameOver();
+}
+
+// Dawn breaks: the final Eclipse Moth is beaten and all ten waves
+// are cleared. The run is won, not just survived — the victory screen
+// reads its table from world.over, so every number is a true one.
+function winRun(world, audio) {
+  world.status = 'victory';
+  world.boss = null;
+  world.newBest = world.score > world.best;
+  if (world.newBest) {
+    world.best = world.score;
+    saveBest(world.best);
+  }
+  world.over = {
+    score: world.score,
+    wave: TOTAL_WAVES,
+    best: world.best,
+    collected: world.stats.collected,
+    bosses: world.stats.bosses,
+    banished: world.stats.banished,
+    time: world.time,
+  };
+  burst(world, world.moth.x, world.moth.y, 60, '#FFD166');
+  burst(world, VIEW_W / 2, 200, 40, '#FFFBEA');
+  if (audio) audio.waveClear();
 }
 
 function lanternBurst(world, audio) {
@@ -348,6 +376,7 @@ function lanternBurst(world, audio) {
     if (d < LANTERN.burstRadius + world.boss.r) damageBoss(world, 1, audio);
   }
   world.score += LANTERN.burstScore + cleared * 25;
+  world.stats.banished += cleared;
   addFloater(world, world.moth.x, world.moth.y - 44, `LANTERN BURST +${LANTERN.burstScore + cleared * 25}`, '#FFD166');
   world.shake = 8;
   if (audio) audio.burst();
@@ -366,9 +395,14 @@ function damageBoss(world, amount, audio) {
     world.boss = null;
     world.shake = 10;
     if (audio) audio.burst();
-    // Beating the boss clears the wave: straight to blessings.
+    // Beating the boss clears the wave: blessings after wave 5,
+    // and the dawn itself after the final boss on wave 10.
     world.motes = [];
-    offerBlessings(world);
+    if (world.wave >= TOTAL_WAVES) {
+      winRun(world, audio);
+    } else {
+      offerBlessings(world);
+    }
   }
 }
 
@@ -524,6 +558,7 @@ function updateWisps(world, dt, audio) {
     if (moth.dashTime > 0 && Math.hypot(w.x - moth.x, w.y - moth.y) < w.r + moth.r + 6) {
       w.dead = true;
       world.score += 25;
+      world.stats.banished += 1;
       burst(world, w.x, w.y, 14, '#A78BFA');
       addFloater(world, w.x, w.y - 18, '+25', '#A78BFA');
       continue;
@@ -651,9 +686,14 @@ export function updateWorld(world, input, dt, audio) {
   updateParticles(world, dt);
 
   // Wave complete: enough motes gathered and no boss to beat.
+  // Wave 10 never offers blessings — clearing it wins the night.
   if (!world.boss && world.waveCollected >= waveQuota(world.wave) && world.status === 'playing') {
-    world.score += 100 + world.wave * 25;
-    if (audio) audio.waveClear();
-    offerBlessings(world);
+    if (world.wave >= TOTAL_WAVES) {
+      winRun(world, audio);
+    } else {
+      world.score += 100 + world.wave * 25;
+      if (audio) audio.waveClear();
+      offerBlessings(world);
+    }
   }
 }

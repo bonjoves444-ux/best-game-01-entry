@@ -32,42 +32,50 @@ function stageStart(world) {
   return world;
 }
 
-// The wave 5 boss fight: the Eclipse Moth with a visible HP bar, the
-// player moth dashing through it, the lantern nearly full, motes,
-// wisps of every kind and webs still on the field — depth in one shot.
-function stagePlay(world) {
+// The cover: the wave 10 FINAL boss fight — the densest frame in the
+// game, and the first thing the judge sees. The final Eclipse Moth
+// (24 HP, already half-beaten) with its HP bar, the player moth
+// dashing through it mid-lantern-burst, combo x4, orbs in flight,
+// a dozen wisps of every kind, webs and motes everywhere.
+function stageBoss(world) {
   startRun(world);
-  startWave(world, 5);
-  world.time = 6.2;
-  world.score = 2340;
-  world.best = 2400;
-  world.combo = 9;
-  world.comboTimer = 2.0;
-  world.lantern = 88;
+  startWave(world, 10);
+  world.time = 8.4;
+  world.score = 3120;
+  world.best = 3120;
+  world.combo = 15;
+  world.comboTimer = 2.2;
+  world.lantern = 100;
   world.hearts = 3;
-  // The boss has already taken damage from the moth's dash.
-  world.boss.hp = 11;
-  world.boss.x = 780;
-  world.boss.y = 290;
-  world.banner = 'THE ECLIPSE MOTH';
-  world.bannerTimer = 1.4;
-  world.moth.x = 620;
-  world.moth.y = 330;
+  world.stats.banished = 23;
+  // The final boss has already taken damage from the moth's dash.
+  world.boss.hp = 12;
+  world.boss.x = 790;
+  world.boss.y = 280;
+  world.banner = 'THE FINAL ECLIPSE MOTH';
+  world.bannerTimer = 1.6;
+  world.moth.x = 610;
+  world.moth.y = 340;
   world.moth.angle = 0.3;
-  world.moth.vx = 700;
-  world.moth.vy = -160;
+  world.moth.vx = 720;
+  world.moth.vy = -140;
   world.moth.dashTime = 0.12;
   world.moth.dashCd = 0.3;
-  scatterMotes(world, 8);
-  scatterWisps(world, ['drifter', 'drifter', 'dart', 'dart', 'weaver']);
-  world.webs.push({ x: 920, y: 520, r: 74, life: 5 });
-  world.webs.push({ x: 260, y: 200, r: 74, life: 5 });
-  burst(world, 620, 330, 18, '#5EEAD4');
-  burst(world, 780, 290, 16, '#FB7185');
-  burst(world, 700, 310, 10, '#FFB347');
+  scatterMotes(world, 10);
+  scatterWisps(world, ['drifter', 'drifter', 'drifter', 'drifter', 'dart', 'dart', 'dart', 'dart', 'weaver', 'weaver', 'weaver', 'weaver']);
+  world.webs.push({ x: 940, y: 540, r: 74, life: 5 });
+  world.webs.push({ x: 250, y: 190, r: 74, life: 5 });
+  // The boss's orbs, mid-flight.
+  world.orbs.push({ x: 700, y: 220, vx: 0, vy: 0, r: 9, life: 4 });
+  world.orbs.push({ x: 870, y: 370, vx: 0, vy: 0, r: 9, life: 4 });
+  burst(world, 610, 340, 20, '#5EEAD4');
+  burst(world, 790, 280, 18, '#FB7185');
+  burst(world, 700, 310, 14, '#FFD166');
+  burst(world, 640, 380, 12, '#FFB347');
   for (const p of world.particles) p.life = 0.6;
-  world.floaters.push({ x: 880, y: 390, text: 'HIT!', color: '#FB7185', life: 0.9 });
-  world.floaters.push({ x: 520, y: 300, text: '+40', color: '#FFD166', life: 0.8 });
+  world.floaters.push({ x: 890, y: 380, text: 'HIT!', color: '#FB7185', life: 0.9 });
+  world.floaters.push({ x: 500, y: 300, text: '+40', color: '#FFD166', life: 0.8 });
+  world.floaters.push({ x: 640, y: 250, text: 'LANTERN BURST +250', color: '#FFD166', life: 0.9 });
   return world;
 }
 
@@ -95,6 +103,34 @@ function stageBlessing(world) {
   return world;
 }
 
+// The victory screen: dawn breaks after wave 10, with the full stats
+// table and a big PLAY AGAIN button. The numbers are the run's own.
+function stageVictory(world) {
+  startRun(world);
+  startWave(world, 10);
+  world.time = 487;
+  world.score = 3120;
+  world.best = 3120;
+  world.combo = 0;
+  world.lantern = 100;
+  world.hearts = 3;
+  world.boss = null;
+  world.banner = '';
+  world.bannerTimer = 0;
+  world.status = 'victory';
+  world.newBest = true;
+  world.over = { score: 3120, wave: 10, best: 3120, collected: 148, bosses: 2, banished: 41, time: 487 };
+  // The moth rests left of the panel, wings folded, in the dawn light.
+  world.moth.x = 180;
+  world.moth.y = 560;
+  world.moth.angle = 0;
+  scatterMotes(world, 6);
+  scatterWisps(world, ['drifter', 'dart']);
+  burst(world, 180, 560, 18, '#FFD166');
+  for (const p of world.particles) p.life = 0.7;
+  return world;
+}
+
 // The end screen: score, best, wave reached and a big RESTART button,
 // the moth dimmed below and wisps drifting in.
 function stageEnd(world) {
@@ -115,7 +151,7 @@ function stageEnd(world) {
   world.moth.angle = 0;
   world.status = 'gameover';
   world.newBest = false;
-  world.over = { score: 1870, wave: 4, best: 2400, collected: 63, bosses: 0 };
+  world.over = { score: 1870, wave: 4, best: 2400, collected: 63, bosses: 0, banished: 17, time: 214 };
   scatterMotes(world, 4);
   scatterWisps(world, ['drifter', 'drifter', 'dart', 'weaver']);
   burst(world, 180, 560, 18, '#FB7185');
@@ -123,7 +159,7 @@ function stageEnd(world) {
   return world;
 }
 
-const STAGES = { start: stageStart, play: stagePlay, blessing: stageBlessing, end: stageEnd };
+const STAGES = { boss: stageBoss, start: stageStart, blessing: stageBlessing, victory: stageVictory, end: stageEnd };
 
 // Build the frozen world for one named shot. Unknown names fall back
 // to the title scene rather than failing the page.

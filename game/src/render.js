@@ -3,10 +3,24 @@
 // Drawing reads the world; it never changes it (except a shake offset
 // taken from Math.random, which is purely visual).
 
-import { VIEW_W, VIEW_H, PALETTE, LANTERN, waveQuota, isBossWave } from './config.js';
+import { VIEW_W, VIEW_H, PALETTE, LANTERN, TOTAL_WAVES, waveQuota, isBossWave } from './config.js';
 import { comboMultiplier } from './world.js';
 
 const FONT = 'Arial, sans-serif';
+
+function fmtTime(sec) {
+  const s = Math.max(0, Math.floor(sec || 0));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+// How far the night has run toward dawn: the waves already cleared
+// plus this wave's fraction (motes gathered, or boss health lost).
+function dawnProgress(world) {
+  const frac = world.boss
+    ? 1 - Math.max(0, world.boss.hp / world.boss.maxHp)
+    : Math.min(1, world.waveCollected / waveQuota(world.wave));
+  return Math.min(1, (world.wave - 1 + frac) / TOTAL_WAVES);
+}
 
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
@@ -347,6 +361,23 @@ function drawGarden(ctx, world) {
 }
 
 function drawHud(ctx, world) {
+  // Dawn progress: a thin gold strip across the very top — the night
+  // ends when it fills, so the goal is visible in every gameplay shot.
+  const dp = dawnProgress(world);
+  ctx.fillStyle = 'rgba(10,14,39,0.85)';
+  ctx.fillRect(0, 0, VIEW_W, 5);
+  if (dp > 0) {
+    const dg = ctx.createLinearGradient(0, 0, VIEW_W, 0);
+    dg.addColorStop(0, PALETTE.amber);
+    dg.addColorStop(1, PALETTE.gold);
+    ctx.fillStyle = dg;
+    ctx.fillRect(0, 0, VIEW_W * dp, 5);
+    ctx.fillStyle = '#FFFBEA';
+    ctx.beginPath();
+    ctx.arc(Math.max(10, VIEW_W * dp - 4), 2.5, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   // Hearts, top left.
   for (let i = 0; i < world.maxHearts; i++) {
     drawHeart(ctx, 44 + i * 36, 40, 26, PALETTE.rose, i < world.hearts);
@@ -366,17 +397,18 @@ function drawHud(ctx, world) {
   ctx.fillStyle = PALETTE.dim;
   ctx.font = `600 15px ${FONT}`;
   ctx.fillText(`BEST ${world.best}`, 32, 140);
+  ctx.fillText(`WISPS BANISHED ${world.stats.banished}`, 32, 164);
 
-  // Wave, top centre.
+  // Wave, top centre — always out of ten, so the end is in sight.
   ctx.textAlign = 'center';
   ctx.fillStyle = PALETTE.text;
   ctx.font = `800 26px ${FONT}`;
-  ctx.fillText(`WAVE ${world.wave}`, VIEW_W / 2, 44);
+  ctx.fillText(`WAVE ${world.wave} / ${TOTAL_WAVES}`, VIEW_W / 2, 44);
   ctx.fillStyle = PALETTE.dim;
   ctx.font = `600 14px ${FONT}`;
   const quota = waveQuota(world.wave);
   if (world.boss) {
-    ctx.fillText('BEAT THE ECLIPSE MOTH', VIEW_W / 2, 66);
+    ctx.fillText(world.wave >= TOTAL_WAVES ? 'BEAT THE FINAL ECLIPSE MOTH' : 'BEAT THE ECLIPSE MOTH', VIEW_W / 2, 66);
   } else {
     ctx.fillText(`MOTES ${world.waveCollected} / ${quota}`, VIEW_W / 2, 66);
   }
@@ -493,7 +525,7 @@ function drawTitle(ctx, world) {
   ctx.fillStyle = PALETTE.text;
   ctx.font = `600 20px ${FONT}`;
   ctx.fillText('You are a lantern moth. Gather the light,', VIEW_W / 2, 292);
-  ctx.fillText('dodge the shadow wisps, and beat the Eclipse Moth.', VIEW_W / 2, 320);
+  ctx.fillText('dodge the shadow wisps, and survive 10 waves until dawn.', VIEW_W / 2, 320);
   ctx.fillStyle = PALETTE.dim;
   ctx.font = `600 18px ${FONT}`;
   ctx.fillText('MOUSE or WASD / ARROWS to fly  ·  SPACE / CLICK to dash', VIEW_W / 2, 372);
@@ -579,6 +611,57 @@ function drawPaused(ctx, world) {
   ctx.fillText('R restarts the run', VIEW_W / 2, 412);
 }
 
+function drawVictory(ctx, world) {
+  ctx.fillStyle = 'rgba(8,10,32,0.62)';
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  panel(ctx, 330, 92, 620, 536);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = PALETTE.gold;
+  ctx.font = `800 56px ${FONT}`;
+  ctx.shadowColor = 'rgba(255,209,102,0.9)';
+  ctx.shadowBlur = 28;
+  ctx.fillText('DAWN BREAKS', VIEW_W / 2, 176);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = PALETTE.teal;
+  ctx.font = `700 20px ${FONT}`;
+  ctx.fillText('Ten waves survived — the lantern held the night.', VIEW_W / 2, 212);
+  // The full stats table: every number is a true run number.
+  const over = world.over || { score: world.score, wave: world.wave, best: world.best, collected: 0, bosses: 0, banished: 0, time: world.time };
+  const rows = [
+    ['TIME SURVIVED', fmtTime(over.time || 0)],
+    ['WAVES CLEARED', `${over.wave} / ${TOTAL_WAVES}`],
+    ['MOTES GATHERED', String(over.collected)],
+    ['WISPS BANISHED', String(over.banished || 0)],
+    ['BOSSES BANISHED', String(over.bosses)],
+  ];
+  let ry = 266;
+  for (const [label, value] of rows) {
+    ctx.textAlign = 'left';
+    ctx.fillStyle = PALETTE.dim;
+    ctx.font = `600 20px ${FONT}`;
+    ctx.fillText(label, 400, ry);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = PALETTE.text;
+    ctx.font = `800 20px ${FONT}`;
+    ctx.fillText(value, 880, ry);
+    ry += 38;
+  }
+  ctx.textAlign = 'center';
+  ctx.fillStyle = PALETTE.gold;
+  ctx.font = `800 30px ${FONT}`;
+  ctx.fillText(`SCORE  ${over.score}`, VIEW_W / 2, 486);
+  ctx.fillStyle = PALETTE.text;
+  ctx.font = `700 22px ${FONT}`;
+  ctx.fillText(`BEST  ${over.best}${world.newBest ? '  ★ NEW BEST!' : ''}`, VIEW_W / 2, 522);
+  // A big RESTART button, drawn as part of the scene.
+  ctx.fillStyle = PALETTE.amber;
+  roundRect(ctx, VIEW_W / 2 - 170, 548, 340, 60, 14);
+  ctx.fill();
+  ctx.fillStyle = PALETTE.ink;
+  ctx.font = `800 28px ${FONT}`;
+  ctx.fillText('↻  PLAY AGAIN', VIEW_W / 2, 588);
+}
+
 function drawGameOver(ctx, world) {
   ctx.fillStyle = 'rgba(8,10,32,0.62)';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
@@ -590,7 +673,7 @@ function drawGameOver(ctx, world) {
   ctx.fillStyle = PALETTE.dim;
   ctx.font = `600 19px ${FONT}`;
   ctx.fillText('The wisps close in — but the lantern can be relit.', VIEW_W / 2, 226);
-  const over = world.over || { score: world.score, wave: world.wave, best: world.best, collected: 0, bosses: 0 };
+  const over = world.over || { score: world.score, wave: world.wave, best: world.best, collected: 0, bosses: 0, banished: 0, time: 0 };
   ctx.fillStyle = PALETTE.gold;
   ctx.font = `800 30px ${FONT}`;
   ctx.fillText(`SCORE  ${over.score}`, VIEW_W / 2, 300);
@@ -599,7 +682,7 @@ function drawGameOver(ctx, world) {
   ctx.fillText(`BEST  ${over.best}${world.newBest ? '  ★ NEW BEST!' : ''}`, VIEW_W / 2, 342);
   ctx.fillStyle = PALETTE.dim;
   ctx.font = `600 20px ${FONT}`;
-  ctx.fillText(`Reached wave ${over.wave}  ·  ${over.collected} motes gathered  ·  ${over.bosses} boss${over.bosses === 1 ? '' : 'es'} banished`, VIEW_W / 2, 382);
+  ctx.fillText(`Reached wave ${over.wave} / ${TOTAL_WAVES}  ·  ${over.collected} motes  ·  ${over.banished || 0} banished  ·  ${over.bosses} boss${over.bosses === 1 ? '' : 'es'} banished`, VIEW_W / 2, 382);
   // A big RESTART button, drawn as part of the scene.
   ctx.fillStyle = PALETTE.amber;
   roundRect(ctx, VIEW_W / 2 - 170, 420, 340, 64, 14);
@@ -691,6 +774,7 @@ export function drawGame(ctx, world) {
   if (world.status === 'title') drawTitle(ctx, world);
   if (world.status === 'blessing') drawBlessing(ctx, world);
   if (world.status === 'paused') drawPaused(ctx, world);
+  if (world.status === 'victory') drawVictory(ctx, world);
   if (world.status === 'gameover') drawGameOver(ctx, world);
   ctx.restore();
 }

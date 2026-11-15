@@ -59,6 +59,10 @@ export const COMBO = {
 export const HEARTS_START = 3;
 export const HEARTS_MAX = 5;
 
+// The night is finite: survive all ten waves and the dawn breaks.
+// Wave 10 is the final Eclipse Moth; clearing it wins the run.
+export const TOTAL_WAVES = 10;
+
 // A wave is won by gathering its mote quota. Wisps keep arriving while
 // the player gathers, so later waves are a race against a thicker dark.
 export function waveQuota(wave) {
@@ -87,10 +91,11 @@ export function kindsForWave(wave) {
 }
 
 export function isBossWave(wave) {
-  return wave % 5 === 0;
+  return wave === 5 || wave === TOTAL_WAVES;
 }
 
 export function bossHealth(wave) {
+  if (wave >= TOTAL_WAVES) return 24;
   return 8 + wave * 2;
 }
 
