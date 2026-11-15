@@ -28,6 +28,11 @@ if (shotName) {
   world = createWorld(seed);
 }
 
+// A read-only handle for live verification harnesses: play-tests read
+// score, hearts, wave and boss health through it. It never drives the
+// game — the loop above is the only thing that changes the world.
+window.__mothlight = world;
+
 const input = createInput(canvas);
 
 function pressStart() {

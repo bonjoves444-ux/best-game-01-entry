@@ -1,6 +1,10 @@
 # Mothlight — Night of the Lanterns
 
-A complete 2D canvas arcade game for make.fun's best-game-01. You are a
+[![make.fun · best-game-01](https://make.fun/badge/best-game-01.svg)](https://make.fun/bounty/best-game-01?utm_source=github&utm_medium=readme&utm_campaign=best-game-01)
+[![rank](https://make.fun/badge/best-game-01/bonjoves444-ux/best-game-01-entry/rank.svg)](https://make.fun/bounty/best-game-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=best-game-01)
+[![reward](https://make.fun/badge/best-game-01/bonjoves444-ux/best-game-01-entry/reward.svg)](https://make.fun/bounty/best-game-01?utm_source=github&utm_medium=readme&utm_campaign=best-game-01)
+
+A complete 2D canvas arcade game for [make.fun's best-game-01](https://make.fun/bounty/best-game-01). You are a
 lantern moth in a deep-indigo night garden: gather glowing light motes
 to fill your lantern, chain combos, dodge shadow wisps, and dash through
 the Eclipse Moth — the boss that arrives every fifth wave.
@@ -33,8 +37,8 @@ WebAudio synth for sound, seeded RNG (`?seed=`).
 ## Screenshots
 
 The four shots in `shots.json` are staged deterministically with
-`?shot=<name>&seed=1` — title over a live garden, mid-game wave 3,
-the blessing choice, and the game-over screen. Each scene freezes
+`?shot=<name>&seed=1` — title over a live garden, the wave 5 boss
+fight, the blessing choice, and the game-over screen. Each scene freezes
 after staging and sets `window.__shotReady` for capture.
 
 ## Files

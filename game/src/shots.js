@@ -32,34 +32,42 @@ function stageStart(world) {
   return world;
 }
 
-// Dense mid-game: wave 3, a combo running, the lantern two-thirds
-// full, wisps of every kind closing in, a web on the field.
+// The wave 5 boss fight: the Eclipse Moth with a visible HP bar, the
+// player moth dashing through it, the lantern nearly full, motes,
+// wisps of every kind and webs still on the field — depth in one shot.
 function stagePlay(world) {
   startRun(world);
-  startWave(world, 3);
-  world.time = 4.5;
-  world.score = 1240;
+  startWave(world, 5);
+  world.time = 6.2;
+  world.score = 2340;
   world.best = 2400;
-  world.combo = 7;
+  world.combo = 9;
   world.comboTimer = 2.0;
-  world.lantern = 62;
-  world.waveCollected = 7;
-  world.banner = '';
-  world.bannerTimer = 0;
-  world.moth.x = 560;
-  world.moth.y = 360;
-  world.moth.angle = 0.4;
-  world.moth.dashTime = 0.1;
-  world.moth.dashCd = 0.5;
-  scatterMotes(world, 10);
-  scatterWisps(world, ['drifter', 'drifter', 'drifter', 'dart', 'dart', 'weaver', 'weaver', 'drifter']);
-  world.webs.push({ x: 860, y: 480, r: 74, life: 5 });
-  world.webs.push({ x: 300, y: 180, r: 74, life: 5 });
-  burst(world, 560, 360, 16, '#5EEAD4');
-  burst(world, 700, 300, 10, '#FFB347');
+  world.lantern = 88;
+  world.hearts = 3;
+  // The boss has already taken damage from the moth's dash.
+  world.boss.hp = 11;
+  world.boss.x = 780;
+  world.boss.y = 290;
+  world.banner = 'THE ECLIPSE MOTH';
+  world.bannerTimer = 1.4;
+  world.moth.x = 620;
+  world.moth.y = 330;
+  world.moth.angle = 0.3;
+  world.moth.vx = 700;
+  world.moth.vy = -160;
+  world.moth.dashTime = 0.12;
+  world.moth.dashCd = 0.3;
+  scatterMotes(world, 8);
+  scatterWisps(world, ['drifter', 'drifter', 'dart', 'dart', 'weaver']);
+  world.webs.push({ x: 920, y: 520, r: 74, life: 5 });
+  world.webs.push({ x: 260, y: 200, r: 74, life: 5 });
+  burst(world, 620, 330, 18, '#5EEAD4');
+  burst(world, 780, 290, 16, '#FB7185');
+  burst(world, 700, 310, 10, '#FFB347');
   for (const p of world.particles) p.life = 0.6;
-  world.floaters.push({ x: 700, y: 280, text: '+20', color: '#FFF7E6', life: 0.9 });
-  world.floaters.push({ x: 480, y: 300, text: '+40', color: '#FFD166', life: 0.8 });
+  world.floaters.push({ x: 880, y: 390, text: 'HIT!', color: '#FB7185', life: 0.9 });
+  world.floaters.push({ x: 520, y: 300, text: '+40', color: '#FFD166', life: 0.8 });
   return world;
 }
 

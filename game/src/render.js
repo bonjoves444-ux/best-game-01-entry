@@ -70,29 +70,63 @@ function drawWisp(ctx, wisp) {
   ctx.save();
   ctx.translate(wisp.x + wob, wisp.y);
   drawGlowOrb(ctx, 0, 0, wisp.r, color, 0.4);
-  // A ragged shadow body: three overlapping blobs and two pale eyes.
+  // Each kind has its own silhouette, so variety reads at a glance:
+  // Drifter is a soft round blob, Dart a sharp angular kite,
+  // Weaver a round body carrying a pale web sac.
   ctx.fillStyle = 'rgba(20,16,48,0.92)';
-  ctx.beginPath();
-  ctx.arc(0, 0, wisp.r, 0, Math.PI * 2);
-  ctx.arc(-wisp.r * 0.55, wisp.r * 0.3, wisp.r * 0.6, 0, Math.PI * 2);
-  ctx.arc(wisp.r * 0.55, wisp.r * 0.3, wisp.r * 0.6, 0, Math.PI * 2);
-  ctx.fill();
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(0, 0, wisp.r, 0, Math.PI * 2);
-  ctx.stroke();
+  if (wisp.kind === 'dart') {
+    ctx.beginPath();
+    ctx.moveTo(0, -wisp.r * 1.35);
+    ctx.lineTo(wisp.r * 0.85, 0);
+    ctx.lineTo(0, wisp.r * 0.85);
+    ctx.lineTo(-wisp.r * 0.85, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Swept-back fins on the dart's flanks.
+    ctx.beginPath();
+    ctx.moveTo(-wisp.r * 0.6, wisp.r * 0.2);
+    ctx.lineTo(-wisp.r * 1.25, wisp.r * 0.75);
+    ctx.lineTo(-wisp.r * 0.35, wisp.r * 0.6);
+    ctx.closePath();
+    ctx.moveTo(wisp.r * 0.6, wisp.r * 0.2);
+    ctx.lineTo(wisp.r * 1.25, wisp.r * 0.75);
+    ctx.lineTo(wisp.r * 0.35, wisp.r * 0.6);
+    ctx.closePath();
+    ctx.fill();
+  } else {
+    ctx.beginPath();
+    ctx.arc(0, 0, wisp.r, 0, Math.PI * 2);
+    ctx.arc(-wisp.r * 0.55, wisp.r * 0.3, wisp.r * 0.6, 0, Math.PI * 2);
+    ctx.arc(wisp.r * 0.55, wisp.r * 0.3, wisp.r * 0.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, 0, wisp.r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
   ctx.fillStyle = '#FDE68A';
   ctx.beginPath();
   ctx.arc(-wisp.r * 0.32, -wisp.r * 0.15, 3.4, 0, Math.PI * 2);
   ctx.arc(wisp.r * 0.32, -wisp.r * 0.15, 3.4, 0, Math.PI * 2);
   ctx.fill();
   if (wisp.kind === 'weaver') {
-    ctx.strokeStyle = 'rgba(167,139,250,0.8)';
+    // The web sac: a pale sac on a thread below the body.
+    ctx.strokeStyle = 'rgba(167,139,250,0.9)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(0, wisp.r * 0.5);
-    ctx.lineTo(0, wisp.r + 10);
+    ctx.moveTo(0, wisp.r * 0.55);
+    ctx.lineTo(0, wisp.r + 12);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(221,214,254,0.95)';
+    ctx.beginPath();
+    ctx.arc(0, wisp.r + 18, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(167,139,250,0.8)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(0, wisp.r + 18, 7, 0, Math.PI * 2);
     ctx.stroke();
   }
   ctx.restore();
@@ -140,8 +174,15 @@ function drawBoss(ctx, boss, time) {
 
 function drawMoth(ctx, moth, time, dimmed) {
   const flap = Math.sin(moth.flap) * 0.55;
+  // Wings fold at rest and spread in flight: a resting moth reads as a
+  // moth, not a butterfly, and the fold shows in every menu shot.
+  const speed = Math.hypot(moth.vx || 0, moth.vy || 0);
+  const fold = Math.max(0.2, Math.min(0.8, 1 - speed / 320));
   ctx.save();
   ctx.translate(moth.x, moth.y);
+  // The moth is drawn ~1.5x its collision radius: the hitbox stays
+  // forgiving while the sprite reads clearly at 300px.
+  ctx.scale(1.5, 1.5);
   if (moth.invuln > 0 && Math.floor(time * 14) % 2 === 0 && !dimmed) {
     ctx.globalAlpha = 0.35;
   }
@@ -152,7 +193,7 @@ function drawMoth(ctx, moth, time, dimmed) {
   for (const side of [-1, 1]) {
     ctx.save();
     ctx.scale(side, 1);
-    ctx.rotate(-0.35 - flap * 0.45);
+    ctx.rotate(-0.35 - flap * 0.45 - fold * 0.5);
     const g = ctx.createLinearGradient(0, 0, 46, -10);
     g.addColorStop(0, '#FFE9A8');
     g.addColorStop(0.55, '#FFB347');
@@ -171,10 +212,10 @@ function drawMoth(ctx, moth, time, dimmed) {
     ctx.arc(18, -10, 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
-    // Lower wing, teal-edged.
+    // Lower wing, teal-edged, tucked in when the wings fold.
     ctx.save();
     ctx.scale(side, 1);
-    ctx.rotate(0.5 + flap * 0.35);
+    ctx.rotate(0.5 + flap * 0.35 - fold * 0.9);
     ctx.fillStyle = '#E8823A';
     ctx.beginPath();
     ctx.ellipse(20, 14, 18, 10, 0.5, 0, Math.PI * 2);
@@ -184,11 +225,21 @@ function drawMoth(ctx, moth, time, dimmed) {
     ctx.stroke();
     ctx.restore();
   }
-  // Body and head.
+  // Fuzzy body: a wide thorax with short fur strokes on both flanks.
   ctx.fillStyle = '#3A2417';
   ctx.beginPath();
-  ctx.ellipse(0, 0, 9, 20, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 0, 11, 22, 0, 0, Math.PI * 2);
   ctx.fill();
+  ctx.strokeStyle = 'rgba(190,120,60,0.95)';
+  ctx.lineWidth = 2;
+  for (let i = -3; i <= 3; i++) {
+    if (i === 0) continue;
+    const a = (i / 3) * 1.05;
+    ctx.beginPath();
+    ctx.moveTo(Math.sin(a) * 10, -6 + Math.cos(a) * 8);
+    ctx.lineTo(Math.sin(a) * 15, -6 + Math.cos(a) * 13);
+    ctx.stroke();
+  }
   ctx.fillStyle = '#FFD166';
   ctx.beginPath();
   ctx.arc(0, -20, 7, 0, Math.PI * 2);
@@ -198,15 +249,30 @@ function drawMoth(ctx, moth, time, dimmed) {
   ctx.arc(-2.6, -21, 1.6, 0, Math.PI * 2);
   ctx.arc(2.6, -21, 1.6, 0, Math.PI * 2);
   ctx.fill();
-  // Antennae with glowing tips.
-  ctx.strokeStyle = '#3A2417';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(-4, -26);
-  ctx.quadraticCurveTo(-12, -38, -16, -42);
-  ctx.moveTo(4, -26);
-  ctx.quadraticCurveTo(12, -38, 16, -42);
-  ctx.stroke();
+  // Feathery antennae: a shaft with short barbs, the clearest
+  // moth-vs-butterfly tell at small size.
+  for (const side of [-1, 1]) {
+    const bx = side * 4;
+    const by = -26;
+    const tx = side * 16;
+    const ty = -42;
+    ctx.strokeStyle = '#3A2417';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.quadraticCurveTo(side * 12, -38, tx, ty);
+    ctx.stroke();
+    ctx.lineWidth = 1.5;
+    for (let i = 1; i <= 4; i++) {
+      const t = i / 5;
+      const px = bx + (tx - bx) * t;
+      const py = by + (ty - by) * t;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + side * 5, py - 3);
+      ctx.stroke();
+    }
+  }
   ctx.fillStyle = PALETTE.gold;
   ctx.beginPath();
   ctx.arc(-16, -42, 2.6, 0, Math.PI * 2);
@@ -224,16 +290,25 @@ function drawGarden(ctx, world) {
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
 
-  // A low moon, half-hidden: the garden's one big light.
-  drawGlowOrb(ctx, 1080, 110, 46, '#FFE9A8', 0.5);
-  ctx.fillStyle = '#FFF3C4';
+  // A glowing pale-gold moon with a soft halo: the garden's big light.
+  drawGlowOrb(ctx, 1080, 110, 92, '#FFE9A8', 0.65);
+  drawGlowOrb(ctx, 1080, 110, 52, '#FFF3C4', 0.5);
+  const moon = ctx.createRadialGradient(1070, 100, 6, 1080, 110, 46);
+  moon.addColorStop(0, '#FFFBEA');
+  moon.addColorStop(0.55, '#FFE9A8');
+  moon.addColorStop(1, '#F2C94C');
+  ctx.fillStyle = moon;
   ctx.beginPath();
-  ctx.arc(1080, 110, 42, 0, Math.PI * 2);
+  ctx.arc(1080, 110, 44, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = 'rgba(180,170,140,0.35)';
+  ctx.strokeStyle = 'rgba(255,251,234,0.85)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(214,164,64,0.4)';
   ctx.beginPath();
   ctx.arc(1066, 100, 8, 0, Math.PI * 2);
   ctx.arc(1092, 122, 6, 0, Math.PI * 2);
+  ctx.arc(1088, 96, 4.5, 0, Math.PI * 2);
   ctx.fill();
 
   for (const s of stars) {
